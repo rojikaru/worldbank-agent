@@ -4,7 +4,7 @@
 
 import { Annotation } from "@langchain/langgraph";
 import { SYSTEM_PROMPT_TEMPLATE } from "./prompts";
-import { RunnableConfig } from "@langchain/core/runnables";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import process from "node:process";
 
 type ModelRequirements = {

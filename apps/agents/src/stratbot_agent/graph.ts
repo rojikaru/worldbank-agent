@@ -1,5 +1,5 @@
 import { AIMessage } from "@langchain/core/messages";
-import { RunnableConfig } from "@langchain/core/runnables";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import {
   MessagesAnnotation,
   StateGraph,
@@ -15,13 +15,13 @@ import { loadChatModel } from "./utils";
 /** Call the LLM powering our agent. **/
 async function callModel(
   state: typeof MessagesAnnotation.State,
-  config: RunnableConfig
+  config: RunnableConfig,
 ): Promise<typeof MessagesAnnotation.Update> {
   const configuration = ensureConfiguration(config);
 
   // Feel free to customize the prompt, model, and other logic!
   const model = await loadChatModel(configuration.model).then((m) =>
-    m.bindTools(TOOLS)
+    m.bindTools(TOOLS),
   );
 
   const response = await model.invoke([
@@ -29,7 +29,7 @@ async function callModel(
       role: "system",
       content: configuration.systemPromptTemplate.replace(
         "{system_time}",
-        new Date().toISOString()
+        new Date().toISOString(),
       ),
     },
     ...state.messages,

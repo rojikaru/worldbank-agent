@@ -1,5 +1,5 @@
 import { it, expect } from "@jest/globals";
-import { BaseMessage } from "@langchain/core/messages";
+import type { BaseMessage } from "@langchain/core/messages";
 
 import { graph } from "../../graph";
 
