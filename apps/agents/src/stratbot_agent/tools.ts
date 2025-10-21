@@ -8,8 +8,8 @@
  * Export an array of all available tools
  * Add new tools to this array to make them available to the agent
  *
- * Note: You can create custom tools by implementing the Tool interface from @langchain/core/tools
+ * Note: You can create custom tools by implementing the Tool interface from `@langchain/core/tools`
  * and add them to this array.
- * See https://js.langchain.com/docs/how_to/custom_tools/#tool-function for more information.
+ * See https://docs.langchain.com/oss/javascript/langchain/tools#tools for more information.
  */
 export const TOOLS = [];
