@@ -1,11 +1,23 @@
-import { initChatModel } from "langchain/chat_models/universal";
+import type { BaseLanguageModelInput } from "@langchain/core/language_models/base";
+import {
+  type ConfigurableChatModelCallOptions,
+  type ConfigurableModel,
+  initChatModel,
+} from "langchain/chat_models/universal";
+
+type LoadedModel = ConfigurableModel<
+  BaseLanguageModelInput,
+  ConfigurableChatModelCallOptions
+>;
 
 /**
  * Load a chat model from a fully specified name.
  * @param fullySpecifiedName - String in the format 'provider/model' or 'provider/account/provider/model'.
  * @returns A Promise that resolves to a BaseChatModel instance.
  */
-export async function loadChatModel(fullySpecifiedName: string) {
+export async function loadChatModel(
+  fullySpecifiedName: string
+): Promise<LoadedModel> {
   const index = fullySpecifiedName.indexOf("/");
   if (index === -1) {
     // If there's no "/", assume it's just the model

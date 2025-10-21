@@ -1,3 +1,5 @@
+import type { Config } from "jest";
+
 export default {
   preset: "ts-jest/presets/default-esm",
   moduleNameMapper: {
@@ -15,4 +17,4 @@ export default {
   setupFiles: ["dotenv/config"],
   passWithNoTests: true,
   testTimeout: 20_000,
-};
+} satisfies Config;

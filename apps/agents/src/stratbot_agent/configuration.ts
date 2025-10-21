@@ -15,6 +15,7 @@ type ModelRequirements = {
 };
 
 // Define which models are available and their requirements
+/* eslint-disable no-process-env */
 const defaultModels = {
   "claude-haiku-4-5-20251001": {
     requirements: [
@@ -33,13 +34,14 @@ const defaultModels = {
     ],
   },
 } as const satisfies Record<string, ModelRequirements>;
+/* eslint-enable no-process-env */
 
 type RegisteredModels = keyof typeof defaultModels;
 
 // Find the first available model
 const defaultModel = Object.entries(defaultModels)
   .find(([, { requirements }]) =>
-    requirements.every((req) => req.value !== undefined)
+    requirements.every((req) => req.value !== undefined),
   )
   ?.at(0) as RegisteredModels;
 
@@ -50,7 +52,7 @@ if (defaultModel === undefined) {
       "Please set any of the following environment variables: " +
       Object.values(defaultModels)
         .flatMap(({ requirements }) => requirements.map((req) => req.name))
-        .join(", ")
+        .join(", "),
   );
 }
 
