@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "packageManager": "yarn@1.22.22",
   "description": "A project containing a LangGraph.js ReAct agent for strategic decision-making.",
-  "main": "src/react_agent/graph.ts",
+  "main": "src/stratbot_agent/graph.ts",
   "author": "Alex Horyshevskyi",
   "license": "MIT",
   "private": true,
