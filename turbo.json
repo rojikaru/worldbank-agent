@@ -16,6 +16,12 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "test": {
+      "dependsOn": ["^test"]
+    },
+    "test:int": {
+      "dependsOn": ["^test:int"]
     }
   }
 }
