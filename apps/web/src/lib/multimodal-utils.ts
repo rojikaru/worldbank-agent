@@ -1,10 +1,10 @@
-import type { Base64ContentBlock } from "@langchain/core/messages";
+import type { ContentBlock } from "@langchain/core/messages";
 import { toast } from "sonner";
 
 // Returns a Promise of a typed multimodal block for images or PDFs
 export async function fileToContentBlock(
   file: File,
-): Promise<Base64ContentBlock> {
+): Promise<ContentBlock.Multimodal.Data> {
   const supportedImageTypes = [
     "image/jpeg",
     "image/png",
@@ -17,7 +17,7 @@ export async function fileToContentBlock(
     toast.error(
       `Unsupported file type: ${file.type}. Supported types are: ${supportedFileTypes.join(", ")}`,
     );
-    return Promise.reject(new Error(`Unsupported file type: ${file.type}`));
+    throw new Error(`Unsupported file type: ${file.type}`);
   }
 
   const data = await fileToBase64(file);
@@ -26,7 +26,7 @@ export async function fileToContentBlock(
     return {
       type: "image",
       source_type: "base64",
-      mime_type: file.type,
+      mimeType: file.type,
       data,
       metadata: { name: file.name },
     };
@@ -36,7 +36,7 @@ export async function fileToContentBlock(
   return {
     type: "file",
     source_type: "base64",
-    mime_type: "application/pdf",
+    mimeType: "application/pdf",
     data,
     metadata: { filename: file.name },
   };
@@ -59,7 +59,7 @@ export async function fileToBase64(file: File): Promise<string> {
 // Type guard for Base64ContentBlock
 export function isBase64ContentBlock(
   block: unknown,
-): block is Base64ContentBlock {
+): block is ContentBlock.Multimodal.Data {
   if (typeof block !== "object" || block === null || !("type" in block))
     return false;
   // file type (legacy)
