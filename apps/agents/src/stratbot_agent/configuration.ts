@@ -3,9 +3,9 @@
  */
 
 import { Annotation } from "@langchain/langgraph";
-import { SYSTEM_PROMPT_TEMPLATE } from "./prompts";
-import type { RunnableConfig } from "@langchain/core/runnables";
 import process from "node:process";
+import type { RunnableConfig } from "@langchain/core/runnables";
+import { SYSTEM_PROMPT } from "./prompts";
 
 type ModelRequirements = {
   requirements: {
@@ -60,7 +60,7 @@ export const ConfigurationSchema = Annotation.Root({
   /**
    * The system prompt to be used by the agent.
    */
-  systemPromptTemplate: Annotation<string>,
+  systemPrompt: Annotation<string>,
 
   /**
    * The name of the language model to be used by the agent.
@@ -71,12 +71,14 @@ export const ConfigurationSchema = Annotation.Root({
 /**
  * Ensure the defaults are populated.
  */
-export function ensureConfiguration({
+export async function ensureConfiguration({
   configurable,
-}: RunnableConfig): typeof ConfigurationSchema.State {
+}: RunnableConfig): Promise<typeof ConfigurationSchema.State> {
+  const systemPrompt =
+    configurable?.systemPrompt ??
+    (await SYSTEM_PROMPT.invoke({ system_time: new Date().toISOString() }));
   return {
-    systemPromptTemplate:
-      configurable?.systemPromptTemplate ?? SYSTEM_PROMPT_TEMPLATE,
+    systemPrompt,
     model: configurable?.model ?? defaultModel,
   };
 }

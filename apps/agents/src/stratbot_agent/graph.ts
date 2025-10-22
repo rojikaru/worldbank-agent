@@ -12,12 +12,18 @@ import { ConfigurationSchema, ensureConfiguration } from "./configuration";
 import { TOOLS } from "./tools";
 import { loadChatModel } from "./utils";
 
-/** Call the LLM powering our agent. **/
+/**
+ * Call the LLM powering our agent.
+ *
+ * @param state - The current state of the MessagesAnnotation
+ * @param config - The runnable configuration
+ * @returns An update to the MessagesAnnotation state with the LLM's response
+ */
 async function callModel(
   state: typeof MessagesAnnotation.State,
   config: RunnableConfig,
 ): Promise<typeof MessagesAnnotation.Update> {
-  const configuration = ensureConfiguration(config);
+  const configuration = await ensureConfiguration(config);
 
   // Feel free to customize the prompt, model, and other logic!
   const model = await loadChatModel(configuration.model).then((m) =>
@@ -27,10 +33,7 @@ async function callModel(
   const response = await model.invoke([
     {
       role: "system",
-      content: configuration.systemPromptTemplate.replace(
-        "{system_time}",
-        new Date().toISOString(),
-      ),
+      content: configuration.systemPrompt,
     },
     ...state.messages,
   ]);
