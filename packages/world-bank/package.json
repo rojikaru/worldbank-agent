@@ -4,6 +4,7 @@
   "description": "World Bank module for the repository",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
