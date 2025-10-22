@@ -1,0 +1,14 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "outputs": ["dist"]
+    },
+    "dev": {
+      "dependsOn": ["^dev"]
+    },
+    "lint": {
+      "outputs": []
+    }
+  }
+}
