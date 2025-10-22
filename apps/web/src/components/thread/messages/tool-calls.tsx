@@ -1,23 +1,25 @@
 import type { AIMessage, ToolMessage } from "@langchain/langgraph-sdk";
-import { useState } from "react";
+import { type JSX, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { MultimodalPreview } from "../MultimodalPreview";
+import { isBase64ContentBlock } from "@/lib/multimodal-utils";
 
-function isComplexValue(value: any): boolean {
+function isComplexValue(value: unknown): boolean {
   return Array.isArray(value) || (typeof value === "object" && value !== null);
 }
 
 export function ToolCalls({
   toolCalls,
 }: {
-  toolCalls: AIMessage["tool_calls"];
+  readonly toolCalls: AIMessage["tool_calls"];
 }) {
   if (!toolCalls || toolCalls.length === 0) return null;
 
   return (
     <div className="mx-auto grid max-w-3xl grid-rows-[1fr_auto] gap-2">
       {toolCalls.map((tc, idx) => {
-        const args = tc.args as Record<string, any>;
+        const args = tc.args as Record<string, unknown>;
         const hasArgs = Object.keys(args).length > 0;
         return (
           <div
@@ -65,11 +67,19 @@ export function ToolCalls({
   );
 }
 
-export function ToolResult({ message }: { message: ToolMessage }) {
+export function ToolResult({
+  message,
+}: {
+  readonly message: ToolMessage;
+}): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  let parsedContent: any;
+  let parsedContent: unknown;
   let isJsonContent = false;
+
+  const artifact = isBase64ContentBlock(message.artifact)
+    ? message.artifact
+    : null;
 
   try {
     if (typeof message.content === "string") {
@@ -83,7 +93,7 @@ export function ToolResult({ message }: { message: ToolMessage }) {
 
   const contentStr = isJsonContent
     ? JSON.stringify(parsedContent, null, 2)
-    : String(message.content);
+    : String(parsedContent);
   const contentLines = contentStr.split("\n");
   const shouldTruncate = contentLines.length > 4 || contentStr.length > 500;
   const displayedContent =
@@ -122,6 +132,14 @@ export function ToolResult({ message }: { message: ToolMessage }) {
           transition={{ duration: 0.3 }}
         >
           <div className="p-3">
+            {artifact && (
+              <div className="mb-3">
+                <MultimodalPreview
+                  block={artifact}
+                  size="lg"
+                />
+              </div>
+            )}
             <AnimatePresence
               mode="wait"
               initial={false}
@@ -140,7 +158,9 @@ export function ToolResult({ message }: { message: ToolMessage }) {
                         ? isExpanded
                           ? parsedContent
                           : parsedContent.slice(0, 5)
-                        : Object.entries(parsedContent)
+                        : Object.entries(
+                            parsedContent as Record<string, unknown>,
+                          )
                       ).map((item, argIdx) => {
                         const [key, value] = Array.isArray(parsedContent)
                           ? [argIdx, item]
