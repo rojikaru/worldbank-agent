@@ -4,6 +4,11 @@
  */
 
 import { plotTool } from "./plot";
+import {
+  datasetByIndicatorTool,
+  getIndicatorsByTopicTool,
+  getTopicsTool,
+} from "./world-bank";
 
 /**
  * Export an array of all available tools
@@ -13,4 +18,9 @@ import { plotTool } from "./plot";
  * and add them to this array.
  * See https://docs.langchain.com/oss/javascript/langchain/tools#tools for more information.
  */
-export const TOOLS = [plotTool];
+export const TOOLS = [
+  plotTool,
+  getTopicsTool,
+  getIndicatorsByTopicTool,
+  datasetByIndicatorTool,
+];
