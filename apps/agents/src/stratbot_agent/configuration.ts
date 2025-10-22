@@ -76,7 +76,9 @@ export async function ensureConfiguration({
 }: RunnableConfig): Promise<typeof ConfigurationSchema.State> {
   const systemPrompt =
     configurable?.systemPrompt ??
-    (await SYSTEM_PROMPT.invoke({ system_time: new Date().toISOString() }));
+    (await SYSTEM_PROMPT.invoke({ system_time: new Date().toISOString() }).then(
+      (prompt) => prompt.toString(),
+    ));
   return {
     systemPrompt,
     model: configurable?.model ?? defaultModel,

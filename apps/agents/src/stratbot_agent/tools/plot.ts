@@ -8,7 +8,14 @@ export const plotTool = tool(
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext("2d");
     const chart = new Chart(ctx as unknown as ChartItem, config);
-    return ["Generated chart", chart.toBase64Image(mimeType)];
+    return [
+      "Generated chart",
+      {
+        type: "image",
+        mime_type: mimeType,
+        data: chart.toBase64Image(mimeType),
+      },
+    ];
   },
   {
     name: "plot_tool",
