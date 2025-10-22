@@ -3,6 +3,7 @@
  * Tools are functions that the agent can use to interact with external systems or perform specific tasks.
  */
 
+import { plotTool } from "./plot";
 
 /**
  * Export an array of all available tools
@@ -12,4 +13,4 @@
  * and add them to this array.
  * See https://docs.langchain.com/oss/javascript/langchain/tools#tools for more information.
  */
-export const TOOLS = [];
+export const TOOLS = [plotTool];
