@@ -75,14 +75,7 @@ export function isBase64ContentBlock(
     return true;
   }
   // image type (new)
-  if (
-    (block as { type: unknown }).type === "image" &&
-    "source_type" in block &&
-    (block as { source_type: unknown }).source_type === "base64" &&
-    "mime_type" in block &&
-    typeof (block as { mime_type?: unknown }).mime_type === "string" &&
-    (block as { mime_type: string }).mime_type.startsWith("image/")
-  ) {
+  if ((block as { type: unknown }).type === "image") {
     return true;
   }
   return false;

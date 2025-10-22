@@ -22,11 +22,15 @@ export const MultimodalPreview: React.FC<MultimodalPreviewProps> = ({
   // Image block
   if (
     block.type === "image" &&
-    block.source_type === "base64" &&
+    // block.source_type === "base64" &&
     typeof block.mime_type === "string" &&
     block.mime_type.startsWith("image/")
   ) {
-    const url = `data:${block.mime_type};base64,${block.data}`;
+    const url =
+      typeof block.data === "string" && block.data.startsWith("data:")
+        ? block.data
+        : `data:${block.mime_type};base64,${block.data}`;
+    console.log(url);
     let imgClass: string = "rounded-md object-cover h-16 w-16 text-lg";
     if (size === "sm") imgClass = "rounded-md object-cover h-10 w-10 text-base";
     if (size === "lg") imgClass = "rounded-md object-cover h-24 w-24 text-xl";
@@ -34,7 +38,33 @@ export const MultimodalPreview: React.FC<MultimodalPreviewProps> = ({
       <div className={cn("relative inline-block", className)}>
         <Image
           src={url}
-          alt={String(block.metadata?.name || "uploaded image")}
+          alt={block.metadata?.name ?? "uploaded image"}
+          className={imgClass}
+          width={size === "sm" ? 16 : size === "md" ? 32 : 48}
+          height={size === "sm" ? 16 : size === "md" ? 32 : 48}
+        />
+        {removable && (
+          <button
+            type="button"
+            className="absolute top-1 right-1 z-10 rounded-full bg-gray-500 text-white hover:bg-gray-700"
+            onClick={onRemove}
+            aria-label="Remove image"
+          >
+            <XIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    );
+  }
+  if (block.type === "image" && block.source_type === "url" && block.url) {
+    let imgClass: string = "rounded-md object-cover h-16 w-16 text-lg";
+    if (size === "sm") imgClass = "rounded-md object-cover h-10 w-10 text-base";
+    if (size === "lg") imgClass = "rounded-md object-cover h-24 w-24 text-xl";
+    return (
+      <div className={cn("relative inline-block", className)}>
+        <Image
+          src={block.url}
+          alt={block.metadata?.name || "uploaded image"}
           className={imgClass}
           width={size === "sm" ? 16 : size === "md" ? 32 : 48}
           height={size === "sm" ? 16 : size === "md" ? 32 : 48}
