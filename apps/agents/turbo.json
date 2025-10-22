@@ -5,7 +5,7 @@
       "outputs": ["dist"]
     },
     "dev": {
-      "dependsOn": ["^dev"]
+      "outputs": []
     },
     "lint": {
       "outputs": []

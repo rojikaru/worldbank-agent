@@ -1,17 +1,21 @@
 import { tool } from "langchain";
 import { WorldBankApiClient } from "@repo/world-bank";
-import z from "zod";
+import { z } from "zod";
 
 const client = new WorldBankApiClient();
 
-export const getTopicsTool = tool(async () => await client.getTopics(), {
-  name: "get_world_bank_api_topics",
-  description: "Get a list of topics from the World Bank API.",
-  schema: z.object({}),
-});
+export const getTopicsTool = tool(
+  async () => JSON.stringify(await client.getTopics(), null, 2),
+  {
+    name: "get_world_bank_api_topics",
+    description: "Get a list of topics from the World Bank API.",
+    schema: z.object({}),
+  },
+);
 
 export const getIndicatorsByTopicTool = tool(
-  async ({ topicId }) => await client.getIndicatorsByTopicId(topicId),
+  async ({ topicId }) =>
+    JSON.stringify(await client.getIndicatorsByTopicId(topicId), null, 2),
   {
     name: "get_world_bank_api_indicators_by_topic",
     description:
@@ -25,7 +29,8 @@ export const getIndicatorsByTopicTool = tool(
 );
 
 export const datasetByIndicatorTool = tool(
-  async (input) => await client.fetchDataForIndicator(input),
+  async (input) =>
+    JSON.stringify(await client.fetchDataForIndicator(input), null, 2),
   {
     name: "get_world_bank_api_dataset_by_indicator",
     description: "Get dataset for a given indicator from the World Bank API.",
@@ -41,8 +46,7 @@ export const datasetByIndicatorTool = tool(
         ),
       date: z
         .union([z.string(), z.array(z.string()).max(2)])
-        .nullish()
-        .default(null)
+        .default([])
         .describe(
           "The date or date range (as [start, end]) to filter the dataset.",
         ),
