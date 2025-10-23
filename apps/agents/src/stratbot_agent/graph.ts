@@ -66,7 +66,13 @@ export const graph = workflow.compile({
   interruptAfter: [],
 });
 
-// Generate a diagram of our graph
-const drawableGraph = await graph.getGraphAsync();
-const image = await drawableGraph.drawMermaidPng();
-await writeFile("graph.png", new Uint8Array(await image.arrayBuffer()));
+async function generateGraphDiagram(): Promise<void> {
+  const drawableGraph = await graph.getGraphAsync();
+  const image = await drawableGraph.drawMermaidPng();
+  await writeFile("graph.png", new Uint8Array(await image.arrayBuffer()));
+}
+
+// Generate a diagram of our graph only when run directly
+if (import.meta.main) {
+  await generateGraphDiagram();
+}
