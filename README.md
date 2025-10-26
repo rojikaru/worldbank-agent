@@ -1,135 +1,91 @@
-# Turborepo starter
+# World Bank Agent
 
-This Turborepo starter is maintained by the Turborepo core team.
+This project focuses on providing a modern LLM with a set of tools to grab the statistics 
+on a myriad of topics from all around the globe, analyze and visualize it for the user.
 
-## Using this example
+## Used technologies
 
-Run the following command:
+- [LangChain + LangGraph](https://docs.langchain.com/oss/javascript/langgraph/overview)
+- [Agent Chat UI](https://github.com/langchain-ai/agent-chat-ui)
+- Turborepo
+- Next.js
+- World Bank API v2
 
-```sh
-npx create-turbo@latest
+## How to run
+
+1. Clone the repo
+2. Install dependencies (npm, yarn or any other node package manager will suit too)
+
+```bash
+pnpm install
 ```
 
-## What's inside?
+And dependencies for [Node canvas](https://github.com/Automattic/node-canvas?tab=readme-ov-file#compiling)
+(plot tools)
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+3. Add .env file with one of these keys:
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+4. Run the project (npm/yarn or any other node package manager will suit too)
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+```bash
+pnpm run dev
 ```
 
-### Develop
+## Why is it suitable for tech demo
 
-To develop all apps and packages, run the following command:
+- Focuses on the core functionality
+- Provides easy flow and appealing UI
+- Responds to questions about statistics
+- Makes plots for easier data representation
 
-```
-cd my-turborepo
+## What should I do next
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+- Add complex analysis tools (thought of Python coder tool + execute
+[HITL middleware](https://docs.langchain.com/oss/javascript/langchain/human-in-the-loop))
+(in [Pyodide](https://github.com/pyodide/pyodide/tree/main),
+maybe even on client side + sending results as a new message in chat history)
+- Add authentication
+- Speed the frontend up
+- Add full-fledged artifacts drawer
+- Introduce eval loop
+- Deploy to LangSmith or Vercel or any other convenient provider
+- Introduce CI/CD
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
+## What went wrong first time
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+This is my second tryout of this project because first one was a real flop 
+and I'm not particularly proud of myself.   
+Here's what I personally think turned sour:
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+- Took recommended technologies list as mandatory requirements and focused on utilizing them
+rather than providing business value
+- Focused on what I could do best and wasted 3 out of 4 days on API, UI and their integration.
+That looked cool code-wise, but didn't really have a proper function/business logic
+- Was overwhelmed by recommendations & not googled how to use them and focused on familiar tech stack parts
+- Didn't negotiate terms & stack with my team (because of the previous bulletpoint; probably the biggest mistake)
+- Because of not googling properly I even stuck with a wrong API
+- Didn't fix a few annoying bugs like LangChain streaming of structured response of ChatGPT
+- Introduced multi-modality support because of such select on my UI (I am THAT stupid)
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+## How do I plan to recover
 
-### Remote Caching
+- Speak to humans about the projects, what it does, what I don't understand, what is absolute MUST for demo and what's not
+- Give time estimates only if I'm sure I understand how to provide business value with my work
+- Treat recruiters, coworkers and literally anyone who can care about my work (stakeholders) as a part of my team
+and definitely talk to them
+- Show my work to non-tech people and learn to explain what it does and why it's **relevant**
+- Find relevant tools for demo projects and try to minimize the time spent on coding
+(because re-using already written code is better) 
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+## Other stuffs you may need
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+### License
+[MIT](LICENSE)
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+### Demo (how my second try looks)
+https://github.com/user-attachments/assets/bc71ce06-d60b-47e7-9ad9-4f2c1891dc40
