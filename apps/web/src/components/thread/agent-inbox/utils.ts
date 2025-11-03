@@ -1,23 +1,22 @@
-import type { BaseMessage} from "@langchain/core/messages";
-import { isBaseMessage } from "@langchain/core/messages";
+import { BaseMessage } from "@langchain/core/messages";
 import { format } from "date-fns";
 import { startCase } from "lodash";
 import type { HumanResponseWithEdits, SubmitType } from "./types";
 import type { HumanInterrupt } from "@langchain/langgraph/prebuilt";
+import type { RefObject } from "react";
 
-export function prettifyText(action: string) {
-  return startCase(action.replace(/_/g, " "));
+export function prettifyText(action: string): string {
+  return startCase(action.replaceAll("_", " "));
 }
 
-export function isArrayOfMessages(
-  value: Record<string, any>[],
-): value is BaseMessage[] {
+export function isArrayOfMessages(value: unknown[]): value is BaseMessage[] {
   if (
-    value.every(isBaseMessage) ||
+    value.every(BaseMessage.isInstance) ||
     (Array.isArray(value) &&
       value.every(
         (v) =>
           typeof v === "object" &&
+          v !== null &&
           "id" in v &&
           "type" in v &&
           "content" in v &&
@@ -30,26 +29,7 @@ export function isArrayOfMessages(
 }
 
 export function baseMessageObject(item: unknown): string {
-  if (isBaseMessage(item)) {
-    const contentText =
-      typeof item.content === "string"
-        ? item.content
-        : JSON.stringify(item.content, null);
-    let toolCallText = "";
-    if ("tool_calls" in item) {
-      toolCallText = JSON.stringify(item.tool_calls, null);
-    }
-    if ("type" in item) {
-      return `${item.type}:${contentText ? ` ${contentText}` : ""}${toolCallText ? ` - Tool calls: ${toolCallText}` : ""}`;
-    } else if ("_getType" in item) {
-      return `${item._getType()}:${contentText ? ` ${contentText}` : ""}${toolCallText ? ` - Tool calls: ${toolCallText}` : ""}`;
-    }
-  } else if (
-    typeof item === "object" &&
-    item &&
-    "type" in item &&
-    "content" in item
-  ) {
+  if (BaseMessage.isInstance(item)) {
     const contentText =
       typeof item.content === "string"
         ? item.content
@@ -76,7 +56,7 @@ export function unknownToPrettyDate(input: unknown): string | undefined {
     ) {
       return format(new Date(input as string), "MM/dd/yyyy hh:mm a");
     }
-  } catch (_) {
+  } catch {
     // failed to parse date. no-op
   }
   return undefined;
@@ -84,9 +64,7 @@ export function unknownToPrettyDate(input: unknown): string | undefined {
 
 export function createDefaultHumanResponse(
   interrupt: HumanInterrupt,
-  initialHumanInterruptEditValue: React.MutableRefObject<
-    Record<string, string>
-  >,
+  initialHumanInterruptEditValue: RefObject<Record<string, string>>,
 ): {
   responses: HumanResponseWithEdits[];
   defaultSubmitType: SubmitType | undefined;
@@ -115,6 +93,7 @@ export function createDefaultHumanResponse(
           k in initialHumanInterruptEditValue.current &&
           initialHumanInterruptEditValue.current[k] !== stringValue
         ) {
+          // eslint-disable-next-line no-undef
           console.error(
             "KEY AND VALUE FOUND IN initialHumanInterruptEditValue.current THAT DOES NOT MATCH THE ACTION REQUEST",
             {
@@ -191,7 +170,7 @@ export function createDefaultHumanResponse(
 export function constructOpenInStudioURL(
   deploymentUrl: string,
   threadId?: string,
-) {
+): string {
   const smithStudioURL = new URL("https://smith.langchain.com/studio/thread");
   // trim the trailing slash from deploymentUrl
   const trimmedDeploymentUrl = deploymentUrl.replace(/\/$/, "");

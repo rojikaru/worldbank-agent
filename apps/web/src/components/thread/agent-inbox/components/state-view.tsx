@@ -1,5 +1,5 @@
 import { ChevronRight, X, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type JSX, useEffect, useState } from "react";
 import {
   baseMessageObject,
   isArrayOfMessages,
@@ -15,18 +15,11 @@ import { Button } from "@/components/ui/button";
 import { MarkdownText } from "../../markdown-text";
 
 interface StateViewRecursiveProps {
-  value: unknown;
-  expanded?: boolean;
+  readonly value: unknown;
+  readonly expanded?: boolean;
 }
 
-const messageTypeToLabel = (message: BaseMessage) => {
-  let type = "";
-  if ("type" in message) {
-    type = message.type as string;
-  } else {
-    type = message._getType();
-  }
-
+const messageTypeToLabel = ({ type }: BaseMessage) => {
   switch (type) {
     case "human":
       return "User";
@@ -41,7 +34,7 @@ const messageTypeToLabel = (message: BaseMessage) => {
   }
 };
 
-function MessagesRenderer({ messages }: { messages: BaseMessage[] }) {
+function MessagesRenderer({ messages }: { readonly messages: BaseMessage[] }) {
   return (
     <div className="flex w-full flex-col gap-1">
       {messages.map((msg, idx) => {
@@ -228,10 +221,10 @@ export function StateViewObject(props: StateViewProps) {
 }
 
 interface StateViewComponentProps {
-  values: Record<string, any>;
-  description: string | undefined;
-  handleShowSidePanel: (showState: boolean, showDescription: boolean) => void;
-  view: "description" | "state";
+  readonly values: Record<string, unknown>;
+  readonly description: string | undefined;
+  readonly handleShowSidePanel: (showState: boolean, showDescription: boolean) => void;
+  readonly view: "description" | "state";
 }
 
 export function StateView({
@@ -239,7 +232,7 @@ export function StateView({
   view,
   values,
   description,
-}: StateViewComponentProps) {
+}: StateViewComponentProps): JSX.Element {
   const [expanded, setExpanded] = useState(false);
 
   if (!values) {
