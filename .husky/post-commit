@@ -1,1 +1,1 @@
-pnpx commitlint --from=HEAD~1 --to=HEAD
+pnpm exec commitlint --from=HEAD~1 --to=HEAD
