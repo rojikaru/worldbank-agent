@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { useThreads } from "@/providers/Thread";
 import type { Thread } from "@langchain/langgraph-sdk";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { HardDrive } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 import { getContentString } from "../utils";
 import { useQueryState, parseAsBoolean } from "nuqs";
@@ -23,6 +26,7 @@ function ThreadList({
   onThreadClick?: (threadId: string) => void;
 }) {
   const [threadId, setThreadId] = useQueryState("threadId");
+  const { restoreThread } = useThreads();
 
   return (
     <div className="flex h-full w-full flex-col items-start justify-start gap-2 overflow-y-scroll [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-transparent">
@@ -38,6 +42,7 @@ function ThreadList({
           const firstMessage = t.values.messages[0];
           itemText = getContentString(firstMessage.content);
         }
+        const isLocalOnly = (t.metadata as { local?: boolean } | null)?.local === true;
         return (
           <div
             key={t.thread_id}
@@ -46,13 +51,24 @@ function ThreadList({
             <Button
               variant="ghost"
               className="w-[280px] items-start justify-start text-left font-normal"
-              onClick={(e) => {
+              title={isLocalOnly ? "Saved in this browser; opening restores it to the server" : undefined}
+              onClick={async (e) => {
                 e.preventDefault();
                 onThreadClick?.(t.thread_id);
                 if (t.thread_id === threadId) return;
-                setThreadId(t.thread_id);
+                if (isLocalOnly) {
+                  try {
+                    await restoreThread(t.thread_id);
+                  } catch (error) {
+                    console.error(error);
+                    toast.error("Could not restore this conversation");
+                    return;
+                  }
+                }
+                void setThreadId(t.thread_id);
               }}
             >
+              {isLocalOnly && <HardDrive className="text-muted-foreground size-3.5 shrink-0" />}
               <p className="truncate text-ellipsis">{itemText}</p>
             </Button>
           </div>
@@ -84,15 +100,34 @@ export default function ThreadHistory() {
 
   const { getThreads, threads, setThreads, threadsLoading, setThreadsLoading } =
     useThreads();
+  const [search, setSearch] = useState("");
 
+  // Empty search lists server + local threads; text searches every saved message (PGlite)
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setThreadsLoading(true);
-    getThreads()
-      .then(setThreads)
-      .catch(console.error)
-      .finally(() => setThreadsLoading(false));
-  }, []);
+    const timer = setTimeout(() => {
+      setThreadsLoading(true);
+      getThreads(search.trim() || undefined)
+        .then(setThreads)
+        .catch(console.error)
+        .finally(() => setThreadsLoading(false));
+    }, 250);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  const searchBox = (
+    <div className="w-full px-4">
+      <Input
+        type="search"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search saved conversations…"
+        aria-label="Search saved conversations"
+        className="h-8"
+      />
+    </div>
+  );
 
   return (
     <>
@@ -113,6 +148,7 @@ export default function ThreadHistory() {
             Thread History
           </h1>
         </div>
+        {searchBox}
         {threadsLoading ? (
           <ThreadHistoryLoading />
         ) : (
@@ -134,6 +170,7 @@ export default function ThreadHistory() {
             <SheetHeader>
               <SheetTitle>Thread History</SheetTitle>
             </SheetHeader>
+            {searchBox}
             <ThreadList
               threads={threads}
               onThreadClick={() => setChatHistoryOpen((o) => !o)}

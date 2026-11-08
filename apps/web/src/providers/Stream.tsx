@@ -5,7 +5,9 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useRef,
 } from "react";
+import { messageText, saveThread } from "@/lib/db";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { type Message } from "@langchain/langgraph-sdk";
 import {
@@ -101,6 +103,24 @@ const StreamSession = ({
       sleep().then(() => getThreads().then(setThreads).catch(console.error));
     },
   });
+
+  // Copy each finished (or interrupted) run into the local PGlite store
+  const wasLoading = useRef(false);
+  useEffect(() => {
+    const finished = wasLoading.current && !streamValue.isLoading;
+    wasLoading.current = streamValue.isLoading;
+    const values = streamValue.values;
+    if (!finished || !threadId || !values?.messages?.length) return;
+    saveThread({
+      id: threadId,
+      assistantId,
+      title: messageText(values.messages[0]).slice(0, 120) || threadId,
+      values,
+    })
+      .then(() => getThreads().then(setThreads))
+      .catch(console.error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streamValue.isLoading]);
 
   useEffect(() => {
     checkGraphStatus(apiUrl, apiKey).then((ok) => {

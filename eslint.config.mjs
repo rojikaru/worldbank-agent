@@ -70,6 +70,12 @@ export default defineConfig([
       "no-use-before-define": "off",
     },
   },
+  {
+    // TypeScript already reports undefined names; no-undef only misfires on
+    // browser/Node globals (document, setTimeout…). Recommended by typescript-eslint.
+    files: ["**/*.{ts,tsx}"],
+    rules: { "no-undef": "off" },
+  },
   globalIgnores([
     "**/node_modules",
     "**/dist",

@@ -15,6 +15,15 @@ import { useQueryState, parseAsBoolean } from "nuqs";
 import { GenericInterruptView } from "./generic-interrupt";
 import { useArtifact } from "../artifact";
 import type { useStream } from "@langchain/langgraph-sdk/react";
+import { type FunctionComponent, useEffect } from "react";
+import { ChartWidget } from "../widgets/chart-widget";
+import { isRunPythonRequest, PythonInterruptView } from "./python-interrupt";
+import { preloadPython } from "@/lib/pyodide/runtime";
+
+/** Generative UI components rendered locally instead of fetched from the LangGraph server */
+const clientComponents = {
+  chart: ChartWidget as FunctionComponent,
+};
 
 function CustomComponent({
   message,
@@ -38,6 +47,7 @@ function CustomComponent({
           stream={thread as ReturnType<typeof useStream>}
           message={customComponent}
           meta={{ ui: customComponent, artifact }}
+          components={clientComponents}
         />
       ))}
     </Fragment>
@@ -79,6 +89,12 @@ function Interrupt({
   isLastMessage,
   hasNoAIOrToolMessages,
 }: InterruptProps) {
+  if (isRunPythonRequest(interruptValue)) {
+    return isLastMessage || hasNoAIOrToolMessages ? (
+      <PythonInterruptView request={interruptValue} />
+    ) : null;
+  }
+
   return (
     <>
       {isAgentInboxInterruptSchema(interruptValue) &&
@@ -111,8 +127,7 @@ export function AssistantMessage({
   );
 
   const thread = useStreamContext();
-  const isLastMessage =
-    thread.messages.at(-1)?.id === message?.id;
+  const isLastMessage = thread.messages.at(-1)?.id === message?.id;
   const hasNoAIOrToolMessages = !thread.messages.some(
     (m) => m.type === "ai" || m.type === "tool",
   );
@@ -137,7 +152,37 @@ export function AssistantMessage({
   const hasAnthropicToolCalls = !!anthropicStreamedToolCalls?.length;
   const isToolResult = message?.type === "tool";
 
+  // Lazy-load Python while data is still being fetched: the agent calls
+  // prepare_python in the same turn as get_dataset
+  const isStreaming = thread.isLoading;
+  useEffect(() => {
+    if (!isStreaming || !message || !("tool_calls" in message)) return;
+    for (const toolCall of message.tool_calls ?? []) {
+      if (toolCall.name === "prepare_python" || toolCall.name === "analyze") {
+        const packages = (toolCall.args as { packages?: string[] }).packages;
+        preloadPython(packages?.length ? packages : ["pandas"]);
+      }
+    }
+  }, [isStreaming, message]);
+
   if (isToolResult && hideToolCalls) {
+    return null;
+  }
+
+  // With tool calls hidden, a tool-calls-only AI message has nothing to show:
+  // skip it entirely instead of leaving an empty padded box behind
+  const hasCustomUi =
+    !!message &&
+    !!thread.values.ui?.some((ui) => ui.metadata?.message_id === message.id);
+  const showsInterrupt =
+    !!threadInterrupt?.value && (isLastMessage || hasNoAIOrToolMessages);
+  if (
+    hideToolCalls &&
+    !isToolResult &&
+    contentString.length === 0 &&
+    !hasCustomUi &&
+    !showsInterrupt
+  ) {
     return null;
   }
 
@@ -186,25 +231,27 @@ export function AssistantMessage({
               isLastMessage={isLastMessage}
               hasNoAIOrToolMessages={hasNoAIOrToolMessages}
             />
-            <div
-              className={cn(
-                "mr-auto flex items-center gap-2 transition-opacity",
-                "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
-              )}
-            >
-              <BranchSwitcher
-                branch={meta?.branch}
-                branchOptions={meta?.branchOptions}
-                onSelect={(branch) => thread.setBranch(branch)}
-                isLoading={isLoading}
-              />
-              <CommandBar
-                content={contentString}
-                isLoading={isLoading}
-                isAiMessage={true}
-                handleRegenerate={() => handleRegenerate(parentCheckpoint)}
-              />
-            </div>
+            {contentString.length > 0 && (
+              <div
+                className={cn(
+                  "mr-auto flex items-center gap-2 transition-opacity",
+                  "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+                )}
+              >
+                <BranchSwitcher
+                  branch={meta?.branch}
+                  branchOptions={meta?.branchOptions}
+                  onSelect={(branch) => thread.setBranch(branch)}
+                  isLoading={isLoading}
+                />
+                <CommandBar
+                  content={contentString}
+                  isLoading={isLoading}
+                  isAiMessage={true}
+                  handleRegenerate={() => handleRegenerate(parentCheckpoint)}
+                />
+              </div>
+            )}
           </>
         )}
       </div>
