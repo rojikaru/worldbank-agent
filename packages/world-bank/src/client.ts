@@ -1,3 +1,4 @@
+import Fuse from "fuse.js";
 import { type $Fetch, ofetch } from "ofetch";
 import type { z } from "zod";
 import type {
@@ -29,6 +30,7 @@ export class WorldBankApiClient {
   // Cache for topics and indicators
   private topics: Topic[] | null = null;
   private readonly indicators: Map<string, Indicator[]> = new Map();
+  private readonly sourceIndexes: Map<string, Fuse<Indicator>> = new Map();
 
   /**
    * Concatenates an array of strings into a single string with a specified separator.
@@ -40,7 +42,7 @@ export class WorldBankApiClient {
   private static concatStrings(
     arr: MaybeArray<string> = null,
     std: string | null = null,
-    sep: string = ";"
+    sep: string = ";",
   ): string | null {
     if (arr === null || arr === undefined) {
       return null;
@@ -63,9 +65,22 @@ export class WorldBankApiClient {
    */
   private static parseResponse<T extends z.ZodType>(
     schema: T,
-    text: string
+    text: string,
   ): z.infer<T> {
     const json = JSON.parse(text);
+
+    // Bad parameters come back as 200 with [{ message: [{ key, value }] }]
+    const apiMessage = (
+      json as [{ message?: { key?: string; value?: string }[] }]
+    )?.[0]?.message;
+    if (Array.isArray(apiMessage)) {
+      const details = apiMessage.map((m) => `${m.key}: ${m.value}`).join("; ");
+      throw new Error(
+        `World Bank API rejected the request (${details}). ` +
+          "Check the indicator ID and use ISO2/ISO3 country codes (e.g. GB, not UK).",
+      );
+    }
+
     const { data, error, success } = schema.safeParse(json);
     if (!success) {
       throw new Error("Failed to parse response", { cause: error });
@@ -103,7 +118,7 @@ export class WorldBankApiClient {
     const [, data] = await this.fetch<TopicsResponse>(`/topic/${id}`, {
       parseResponse: WorldBankApiClient.parseResponse.bind(
         this,
-        topicsResponseSchema
+        topicsResponseSchema,
       ),
     });
     return data.at(0) ?? null;
@@ -116,7 +131,7 @@ export class WorldBankApiClient {
    * @throws An error if the specified topic ID is not found in the cached topics.
    */
   async getIndicatorsByTopicId(
-    topicId: MaybeArray<string> = null
+    topicId: MaybeArray<string> = null,
   ): Promise<Indicator[]> {
     const topicParam = WorldBankApiClient.concatStrings(topicId, "all")!;
 
@@ -141,7 +156,7 @@ export class WorldBankApiClient {
 
     const parseResponse = WorldBankApiClient.parseResponse.bind(
       this,
-      indicatorsResponseSchema
+      indicatorsResponseSchema,
     );
 
     // Fetch pagination info first
@@ -150,7 +165,7 @@ export class WorldBankApiClient {
       {
         query: { per_page: 1 },
         parseResponse,
-      }
+      },
     );
 
     // Then fetch all indicators
@@ -159,7 +174,7 @@ export class WorldBankApiClient {
       {
         query: { per_page: pagination.total },
         parseResponse,
-      }
+      },
     );
 
     // Cache the fetched indicators
@@ -184,20 +199,90 @@ export class WorldBankApiClient {
     const indicator = WorldBankApiClient.concatStrings(parameters.indicatorId);
     const country = WorldBankApiClient.concatStrings(
       parameters.countryCode,
-      "all"
+      "all",
     );
     const date = WorldBankApiClient.concatStrings(parameters.date, "all", ":");
 
     const [, data] = await this.fetch<DataResponse>(
       `/country/${country}/indicator/${indicator}`,
       {
-        query: { date },
+        // The API pages by 50 rows by default, which silently cuts multi-country requests
+        query: { date, per_page: 20000 },
         parseResponse: WorldBankApiClient.parseResponse.bind(
           this,
-          dataResponseSchema
+          dataResponseSchema,
         ),
-      }
+      },
     );
     return data;
+  }
+
+  /**
+   * Fetches (and caches) every indicator published by a World Bank source.
+   * Source "2" is World Development Indicators, the curated core dataset.
+   * @param sourceId - The ID of the source (default "2").
+   * @returns A promise that resolves to an array of Indicator objects.
+   */
+  async getIndicatorsBySource(sourceId: string = "2"): Promise<Indicator[]> {
+    const parseResponse = WorldBankApiClient.parseResponse.bind(
+      this,
+      indicatorsResponseSchema,
+    );
+    const [pagination] = await this.fetch<IndicatorsResponse>(
+      `/source/${sourceId}/indicator`,
+      { query: { per_page: 1 }, parseResponse },
+    );
+    const [, indicators] = await this.fetch<IndicatorsResponse>(
+      `/source/${sourceId}/indicator`,
+      { query: { per_page: pagination.total }, parseResponse },
+    );
+    return indicators;
+  }
+
+  /**
+   * Fuzzy-searches indicators of a source by name, ID and description.
+   * The index is built once per source and reused.
+   * @param query - Free-text query, e.g. "co2 emissions per capita".
+   * @param limit - Maximum number of results (default 8).
+   * @param sourceId - The ID of the source to search in (default "2", WDI).
+   * @returns A promise that resolves to the best matching indicators.
+   */
+  async searchIndicators(
+    query: string,
+    limit: number = 8,
+    sourceId: string = "2",
+  ): Promise<Indicator[]> {
+    let index = this.sourceIndexes.get(sourceId);
+    if (!index) {
+      index = new Fuse(await this.getIndicatorsBySource(sourceId), {
+        keys: [
+          { name: "name", weight: 0.8 },
+          { name: "id", weight: 0.2 },
+        ],
+        ignoreLocation: true,
+        includeScore: true,
+        threshold: 0.4,
+      });
+      this.sourceIndexes.set(sourceId, index);
+    }
+
+    // Pure fuzzy matching lets common words win ("per capita" pulled in
+    // alcohol indicators for a CO2 query), so rank first by how many query
+    // words the name contains, then by fuzzy score for typos and ordering.
+    const words = query
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 1);
+    const wordHits = (indicator: Indicator) => {
+      const name = `${indicator.name} ${indicator.id}`.toLowerCase();
+      return words.filter((word) => name.includes(word)).length;
+    };
+
+    return index
+      .search(query, { limit: 200 })
+      .map((result) => ({ ...result, hits: wordHits(result.item) }))
+      .sort((a, b) => b.hits - a.hits || (a.score ?? 1) - (b.score ?? 1))
+      .slice(0, limit)
+      .map((result) => result.item);
   }
 }
