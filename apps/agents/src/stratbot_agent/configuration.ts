@@ -7,17 +7,19 @@ import process from "node:process";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { SYSTEM_PROMPT } from "./prompts";
 
-type ModelRequirements = {
+type Model<K extends string> = {
+  name: K;
   requirements: {
     name: string;
-    value: string | undefined;
+    value?: string;
   }[];
 };
 
 // Define which models are available and their requirements
 /* eslint-disable no-process-env */
-const defaultModels = {
-  "claude-haiku-4-5-20251001": {
+const defaultModels = [
+  {
+    name: "claude-haiku-5-5",
     requirements: [
       {
         name: "ANTHROPIC_API_KEY",
@@ -25,7 +27,8 @@ const defaultModels = {
       },
     ],
   },
-  "gpt-4.1-mini": {
+  {
+    name: "gpt-6-luna",
     requirements: [
       {
         name: "OPENAI_API_KEY",
@@ -33,26 +36,36 @@ const defaultModels = {
       },
     ],
   },
-} as const satisfies Record<string, ModelRequirements>;
+  {
+    name: "ollama/qwen3.5:9b",
+    requirements: [
+      {
+        name: "OLLAMA_BASE_URL",
+        value: process.env.OLLAMA_BASE_URL,
+      },
+    ],
+  },
+] as const satisfies Model<string>[];
 /* eslint-enable no-process-env */
 
-type RegisteredModels = keyof typeof defaultModels;
-
 // Find the first available model
-const defaultModel = Object.entries(defaultModels)
-  .find(([, { requirements }]) =>
-    requirements.every((req) => req.value !== undefined),
-  )
-  ?.at(0) as RegisteredModels;
+const defaultModel = defaultModels.find((model) =>
+  model.requirements.every((req) => req.value),
+)?.name;
 
 // Assert that we have at least one model available
 if (defaultModel === undefined) {
+  const missingKeys = defaultModels
+    .flatMap((model) =>
+      model.requirements.filter((req) => !req.value).map((req) => req.name),
+    )
+    // unique
+    .filter((value, index, self) => self.indexOf(value) === index);
+
   throw new Error(
     "No language model API keys found in environment variables. " +
       "Please set any of the following environment variables: " +
-      Object.values(defaultModels)
-        .flatMap(({ requirements }) => requirements.map((req) => req.name))
-        .join(", "),
+      missingKeys.join(", "),
   );
 }
 
@@ -74,13 +87,15 @@ export const ConfigurationSchema = Annotation.Root({
 export async function ensureConfiguration({
   configurable,
 }: RunnableConfig): Promise<typeof ConfigurationSchema.State> {
-  const systemPrompt =
-    configurable?.systemPrompt ??
-    (await SYSTEM_PROMPT.invoke({ system_time: new Date().toISOString() }).then(
-      (prompt) => prompt.toString(),
-    ));
-  return {
-    systemPrompt,
-    model: configurable?.model ?? defaultModel,
-  };
+  const { systemPrompt, model = defaultModel } = configurable ?? {};
+
+  if (systemPrompt) {
+    return { systemPrompt, model };
+  }
+
+  const newPrompt = await SYSTEM_PROMPT.invoke({
+    system_time: new Date().toISOString(),
+  }).then((prompt) => prompt.toString());
+
+  return { systemPrompt: newPrompt, model };
 }
