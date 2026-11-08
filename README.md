@@ -19,46 +19,49 @@ after you approve the code, and answers with interactive charts you can export.
 
 ## How it works
 
+A plain LLM answers from memory: fluent, but numbers can be outdated or invented.
+The agent uses the same model in a loop: it decides what it needs, calls tools,
+reads the results and repeats until it can answer from real data. Simple questions
+still get a direct answer; the loop only kicks in when it helps.
+
 ```mermaid
-flowchart LR
-  user([User]) <--> ui
-
-  subgraph browser [Browser · Next.js + Agent Chat UI]
-    ui[Chat UI]
-    chart[Chart widget<br/>shadcn + Recharts]
-    approve[Approval widget]
-    py[Pyodide worker<br/>Python + pandas]
-    db[(PGlite<br/>IndexedDB)]
-    ui --> chart
-    ui --> approve --> py
-    ui <--> db
+flowchart TB
+  subgraph plain [Plain LLM]
+    direction LR
+    q1([Question]) --> m1[Model generates text<br/>from memory] --> a1([Answer<br/>may be outdated or invented])
   end
-
-  subgraph server [LangGraph.js agent]
-    callModel[callModel<br/>main agent]
-    tools[tools]
-    aw[analystWrite<br/>analyst sub-agent]
-    ar[analystRun<br/>interrupt]
-    af[analystFinish]
-    callModel -- tool calls --> tools
-    tools -- results --> callModel
-    tools -- analyze --> aw --> ar
-    ar -- error, retry ≤3 --> aw
-    ar --> af --> callModel
+  subgraph agentic [This agent]
+    direction LR
+    q2([Question]) --> m2[Model plans] --> act[Tools act] --> obs[Results observed]
+    obs -- not done yet --> m2
+    obs -- enough --> a2([Answer from fetched data<br/>with sources and a chart])
   end
+  plain ~~~ agentic
+```
 
-  ui <-- stream --> callModel
-  ar -. code + datasets .-> approve
-  py -. output .-> ar
-  tools <--> wb[(World Bank API v2)]
-  callModel <--> llm[[Ollama / Anthropic / OpenAI]]
-  aw <--> llm
+The loop in this project. Simple questions go straight from the agent to the answer;
+you stay in the loop for calculations, which only run after you approve the code.
+
+```mermaid
+flowchart TB
+  user([You]) -- question --> agent{{Agent<br/>decides the next step}}
+  agent <-- data / summaries --> wb[(World Bank API)]
+  agent -- needs calculations --> analyst[Analyst sub-agent<br/>writes Python]
+  analyst --> gate{You approve<br/>the code?}
+  gate -- Run --> py[Python in your browser]
+  py -- error: fix and retry --> analyst
+  py -- results --> agent
+  gate -- Stop --> agent
+  agent -- answer + chart --> user
 ```
 
 Data flows **around** the model, not through it: fetched tables live in the
 graph state, the model sees short summaries, and the browser gets the full rows
 for Python and charts. Before this, one tool call could return ~200k characters
-and overflow a local model's context.
+and overflow a local model's context. LangGraph Studio (`pnpm dev`, then open the
+Studio link) shows the node-level graph: `callModel`, `tools`, `analystWrite`,
+`analystRun` (interrupt), `analystFinish`. Conversations are also kept in your
+browser (PGlite / IndexedDB) and can be restored if the server forgets them.
 
 ### Tools
 
