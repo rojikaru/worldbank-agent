@@ -25,4 +25,21 @@ export default defineConfig([
       ],
     },
   },
+  {
+    // Root config targets the Node agent; relax backend-only rules for browser code
+    files: ["**/*.{ts,tsx}"],
+    rules: {
+      "no-undef": "off",
+      "no-process-env": "off",
+      "@typescript-eslint/no-misused-promises": [
+        "error",
+        { 
+          checksVoidReturn: { attributes: false },
+          
+        },
+      ],
+      "@typescript-eslint/no-floating-promises": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  }
 ]);

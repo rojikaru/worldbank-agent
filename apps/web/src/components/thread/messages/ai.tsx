@@ -14,6 +14,7 @@ import { ThreadView } from "../agent-inbox";
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { GenericInterruptView } from "./generic-interrupt";
 import { useArtifact } from "../artifact";
+import type { useStream } from "@langchain/langgraph-sdk/react";
 
 function CustomComponent({
   message,
@@ -34,7 +35,7 @@ function CustomComponent({
       {customComponents.map((customComponent) => (
         <LoadExternalComponent
           key={customComponent.id}
-          stream={thread}
+          stream={thread as ReturnType<typeof useStream>}
           message={customComponent}
           meta={{ ui: customComponent, artifact }}
         />
@@ -97,11 +98,11 @@ export function AssistantMessage({
   message,
   isLoading,
   handleRegenerate,
-}: {
+}: Readonly<{
   message: Message | undefined;
   isLoading: boolean;
   handleRegenerate: (parentCheckpoint: Checkpoint | null | undefined) => void;
-}) {
+}>) {
   const content = message?.content ?? [];
   const contentString = getContentString(content);
   const [hideToolCalls] = useQueryState(
@@ -111,8 +112,8 @@ export function AssistantMessage({
 
   const thread = useStreamContext();
   const isLastMessage =
-    thread.messages[thread.messages.length - 1].id === message?.id;
-  const hasNoAIOrToolMessages = !thread.messages.find(
+    thread.messages.at(-1)?.id === message?.id;
+  const hasNoAIOrToolMessages = !thread.messages.some(
     (m) => m.type === "ai" || m.type === "tool",
   );
   const meta = message ? thread.getMessagesMetadata(message) : undefined;

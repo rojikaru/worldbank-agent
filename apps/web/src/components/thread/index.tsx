@@ -133,7 +133,6 @@ export function Thread() {
     handleFileUpload,
     dropRef,
     removeBlock,
-    resetBlocks: _resetBlocks,
     dragOver,
     handlePaste,
   } = useFileUpload();

@@ -138,13 +138,16 @@ export function useFileUpload({
         : [];
       setContentBlocks((prev) => [...prev, ...newBlocks]);
     };
-    const handleWindowDragEnd = (e: DragEvent) => {
+    const onWindowDrop = (e: DragEvent) => {
+      void handleWindowDrop(e);
+    };
+    const handleWindowDragEnd = (_event: DragEvent) => {
       dragCounter.current = 0;
       setDragOver(false);
     };
     window.addEventListener("dragenter", handleWindowDragEnter);
     window.addEventListener("dragleave", handleWindowDragLeave);
-    window.addEventListener("drop", handleWindowDrop);
+    window.addEventListener("drop", onWindowDrop);
     window.addEventListener("dragend", handleWindowDragEnd);
 
     // Prevent default browser behavior for dragover globally
@@ -181,7 +184,7 @@ export function useFileUpload({
       element.removeEventListener("dragleave", handleDragLeave);
       window.removeEventListener("dragenter", handleWindowDragEnter);
       window.removeEventListener("dragleave", handleWindowDragLeave);
-      window.removeEventListener("drop", handleWindowDrop);
+      window.removeEventListener("drop", onWindowDrop);
       window.removeEventListener("dragend", handleWindowDragEnd);
       window.removeEventListener("dragover", handleWindowDragOver);
       dragCounter.current = 0;
@@ -203,17 +206,16 @@ export function useFileUpload({
   ) => {
     const items = e.clipboardData.items;
     if (!items) return;
-    const files: File[] = [];
-    for (let i = 0; i < items.length; i += 1) {
-      const item = items[i];
-      if (item.kind === "file") {
-        const file = item.getAsFile();
-        if (file) files.push(file);
-      }
-    }
+
+    const files: File[] = Iterator.from(items)
+      .filter((item) => item.kind === "file")
+      .map((item) => item.getAsFile())
+      .filter((file) => file !== null)
+      .toArray();
     if (files.length === 0) {
       return;
     }
+
     e.preventDefault();
     const validFiles = files.filter((file) =>
       SUPPORTED_FILE_TYPES.includes(file.type),
