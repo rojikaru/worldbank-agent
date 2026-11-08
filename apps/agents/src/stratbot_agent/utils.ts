@@ -16,15 +16,25 @@ type LoadedModel = ConfigurableModel<
  * @returns A Promise that resolves to a BaseChatModel instance.
  */
 export async function loadChatModel(
-  fullySpecifiedName: string
+  fullySpecifiedName: string,
 ): Promise<LoadedModel> {
   const index = fullySpecifiedName.indexOf("/");
   if (index === -1) {
     // If there's no "/", assume it's just the model
     return await initChatModel(fullySpecifiedName);
-  } else {
-    const provider = fullySpecifiedName.slice(0, index);
-    const model = fullySpecifiedName.slice(index + 1);
-    return await initChatModel(model, { modelProvider: provider });
   }
+  const provider = fullySpecifiedName.slice(0, index);
+  const model = fullySpecifiedName.slice(index + 1);
+
+  if (provider === "dmr") {
+    // Docker Model Runner speaks the OpenAI API, so reuse the OpenAI client
+    // with its local base URL (no key needed, but the client insists on one)
+    return await initChatModel(model, {
+      modelProvider: "openai",
+      apiKey: "docker-model-runner",
+      // eslint-disable-next-line no-process-env
+      configuration: { baseURL: process.env.DMR_BASE_URL },
+    });
+  }
+  return await initChatModel(model, { modelProvider: provider });
 }

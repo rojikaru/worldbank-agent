@@ -37,6 +37,15 @@ const defaultModels = [
     ],
   },
   {
+    name: "dmr/ai/qwen3.5:9b",
+    requirements: [
+      {
+        name: "DMR_BASE_URL",
+        value: process.env.DMR_BASE_URL,
+      },
+    ],
+  },
+  {
     name: "ollama/qwen3.5:9b",
     requirements: [
       {
