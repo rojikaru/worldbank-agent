@@ -15,7 +15,7 @@ after you approve the code, and answers with interactive charts you can export.
 - Compare countries and periods, compute growth rates, correlations, trends
 - Show interactive charts (line / bar / scatter / table) with CSV, PNG and SVG export
 - Keep conversations in the browser (PGlite / IndexedDB) and restore them after a server restart
-- Run fully locally on a consumer GPU (Ollama + Qwen 3.5) or with Anthropic / OpenAI models
+- Run fully locally on a consumer GPU (Docker Model Runner or Ollama + Qwen 3.5) or with Anthropic / OpenAI models
 
 ## How it works
 
@@ -100,20 +100,28 @@ pnpm install
 cp .env.example .env   # fill in what you use; empty values are skipped
 ```
 
-The first provider whose variable is set wins: `ANTHROPIC_API_KEY` → `OPENAI_API_KEY` → `OLLAMA_BASE_URL`.
+The first provider whose variable is set wins:
+`ANTHROPIC_API_KEY` → `OPENAI_API_KEY` → `DMR_BASE_URL` → `OLLAMA_BASE_URL`.
 Optional: `ANALYST_MODEL` picks a different model for the analyst sub-agent
 (e.g. `ollama/qwen2.5-coder:7b`).
 
-### 2. Local model with Ollama (GPU)
+### 2. Local model (GPU)
 
-**Option A, Docker** (needs the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)):
+**Option A, [Docker Model Runner](https://docs.docker.com/ai/model-runner/)** (Docker Engine on Linux
+with the NVIDIA Container Toolkit, or Docker Desktop):
 
 ```bash
-docker compose up -d                       # compose.yaml in this repo
-docker exec ollama ollama pull qwen3.5:9b
+docker model install-runner --gpu cuda     # Docker Engine; Docker Desktop: enable Model Runner in settings
+docker model pull ai/qwen3.5:9b
+docker model configure --context-size 16384 ai/qwen3.5:9b -- --parallel 1
 ```
 
-**Option B, native CLI** (uses the GPU directly when the NVIDIA driver is installed):
+`.env`: `DMR_BASE_URL=http://localhost:12434/engines/llama.cpp/v1`.
+The `configure` line matters: by default the context is split into 4 slots of ~5.6k tokens,
+too small for the agent; one 16k slot fits a 9B model on an 8 GB GPU.
+Check the GPU with `nvidia-smi` (a `llama-server` process should hold the model).
+
+**Option B, Ollama** (uses the GPU directly when the NVIDIA driver is installed):
 
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh   # or your distro's package
@@ -121,12 +129,12 @@ OLLAMA_CONTEXT_LENGTH=16384 OLLAMA_FLASH_ATTENTION=1 OLLAMA_KV_CACHE_TYPE=q8_0 o
 ollama pull qwen3.5:9b
 ```
 
-Check that the model runs on the GPU: `ollama ps` should show `100% GPU`.
-`OLLAMA_CONTEXT_LENGTH=16384` matters: the default 4k context is too small for the agent.
+`.env`: `OLLAMA_BASE_URL=http://localhost:11434`. Check the GPU with `ollama ps` (should show `100% GPU`).
+`OLLAMA_CONTEXT_LENGTH=16384` matters for the same reason: the default 4k context is too small.
 
-Models tested on an RTX 5060 Laptop (8 GB): `qwen3.5:9b` (default, 54 tok/s, reliable tool calls),
-`qwen3.5:4b` (faster, weaker analysis). `deepseek-r1:8b` doesn't call tools; `gpt-oss:20b` works but
-spills to CPU on 8 GB.
+Tested on an RTX 5060 Laptop (8 GB) with `qwen3.5:9b`: Docker Model Runner ~61 tok/s,
+Ollama ~54 tok/s, both with reliable tool calls. `qwen3.5:4b` is faster but weaker at analysis;
+`deepseek-r1:8b` doesn't call tools; `gpt-oss:20b` works but spills to CPU on 8 GB.
 
 ### 3. Start
 
@@ -136,8 +144,6 @@ pnpm dev
 
 - Chat UI: http://localhost:3000
 - LangGraph API: http://localhost:2024 (LangGraph Studio works with it too)
-
-Port 3000 clashes with Open WebUI if you run it next to Ollama; move one of them.
 
 ## Evaluation
 
@@ -174,7 +180,6 @@ apps/agents      LangGraph.js agent (graph, tools, analyst sub-agent, prompts)
 apps/web         Next.js chat UI (Agent Chat UI fork): chart widget, Pyodide, PGlite
 packages/world-bank  Typed World Bank API client (zod, ofetch, fuse.js search)
 eval/            Question sets, harness, grader, saved results
-compose.yaml     Ollama with GPU
 ```
 
 ## Next steps
