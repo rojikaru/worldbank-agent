@@ -1,0 +1,50 @@
+[
+  {
+    "id": "lookup",
+    "q": "What was the population of Nigeria in 2023?"
+  },
+  {
+    "id": "ranking",
+    "q": "Which G7 country had the highest inflation in 2022?"
+  },
+  {
+    "id": "trend-chart",
+    "q": "Show me how life expectancy changed in India, China and Brazil since 1990."
+  },
+  {
+    "id": "correlation",
+    "q": "Across the Nordic and Baltic countries, is GDP per capita correlated with life expectancy in 2022?"
+  },
+  {
+    "id": "ukrainian",
+    "q": "Яка частка відновлюваної енергії в Україні та Польщі за останні 10 років? Хто має кращу динаміку?"
+  },
+  {
+    "id": "search",
+    "q": "How did youth unemployment in Spain, Italy and Greece evolve after the 2008 crisis?"
+  },
+  {
+    "id": "regression",
+    "q": "Fit a linear trend to Kenya's GDP growth from 2000 to 2023. What is the slope per year and is it significant?"
+  },
+  {
+    "id": "biggest-drop",
+    "q": "Which country had the biggest drop in CO2 emissions per capita between 2000 and 2022: UK, France, Germany, USA or Japan?"
+  },
+  {
+    "id": "missing",
+    "q": "What is Ukraine's Gini index for 2025?"
+  },
+  {
+    "id": "bar-chart",
+    "q": "Compare government spending on education (% of GDP) in Finland, Estonia and Poland over the last decade as a bar chart."
+  },
+  {
+    "id": "forecast",
+    "q": "Forecast Poland's GDP per capita for the next 5 years and show it on a chart."
+  },
+  {
+    "id": "regression-multi",
+    "q": "Across Germany, France, Italy, Spain, Poland, Netherlands, Sweden and Austria in 2022, does government education spending (% of GDP) explain life expectancy? Use a regression."
+  }
+]

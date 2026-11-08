@@ -1,0 +1,26 @@
+# Local LLM backend: Ollama with NVIDIA GPU access (docker compose up -d)
+# Needs the NVIDIA Container Toolkit; check with `docker exec ollama ollama ps` (PROCESSOR = 100% GPU)
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=1h
+      - OLLAMA_CONTEXT_LENGTH=16384 # the agent's prompts + tool results need more than the 4k default
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_KV_CACHE_TYPE=q8_0 # halves KV-cache memory, lets 9B models stay fully on an 8 GB GPU
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  ollama:

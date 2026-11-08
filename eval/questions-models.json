@@ -1,0 +1,55 @@
+[
+  {
+    "id": "arima-explicit",
+    "q": "Use ARIMA to forecast Germany's population for the next 10 years.",
+    "expect": {
+      "helpers": ["forecast_arima"],
+      "tools": ["analyze"],
+      "answer_match": "20(3[0-9])"
+    }
+  },
+  {
+    "id": "trend-slope",
+    "q": "Is life expectancy in Ukraine trending up since 2000? Give the yearly slope and whether it is significant.",
+    "expect": { "helpers": ["linear_trend"], "answer_match": "slope|per year" }
+  },
+  {
+    "id": "forecast-chart",
+    "q": "Predict India's GDP growth for 2025-2027 and plot it.",
+    "expect": { "helpers": ["forecast_arima"], "chart": true }
+  },
+  {
+    "id": "regression-nordic",
+    "q": "Does the share of renewable energy explain CO2 emissions per capita across Nordic and Baltic countries in 2021? Run a regression.",
+    "expect": {
+      "helpers": ["regress"],
+      "answer_match": "R.?2|R-squared|p.?value"
+    }
+  },
+  {
+    "id": "trend-explicit",
+    "q": "Fit a linear trend to inflation in Turkey from 2010 to 2023.",
+    "expect": { "helpers": ["linear_trend"] }
+  },
+  {
+    "id": "too-little-data",
+    "q": "Forecast Estonia's unemployment for the next 3 years using only 2019-2023 data.",
+    "expect": {
+      "answer_match": "enough|too (few|short)|insufficient|at least|only (5|five)|more (data|years)"
+    }
+  },
+  {
+    "id": "trend-chart",
+    "q": "What's the trend in Brazil's forest area since 1990? Show a chart.",
+    "expect": { "helpers": ["linear_trend"], "chart": true }
+  },
+  {
+    "id": "no-model-needed",
+    "q": "Compare the volatility (standard deviation) of GDP growth in the US and China from 2000 to 2023.",
+    "expect": {
+      "tools": ["analyze"],
+      "not_helpers": ["forecast_arima", "regress"],
+      "answer_match": "standard deviation|volatil"
+    }
+  }
+]
